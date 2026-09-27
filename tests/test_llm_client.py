@@ -7,7 +7,7 @@ import os
 # Add parent directory to path so we can import src
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.llm_client import generate_response
+from src.llm_client import generate_response, stream_response
 
 class TestLLMClient(unittest.TestCase):
 
@@ -36,5 +36,22 @@ class TestLLMClient(unittest.TestCase):
         # Assert
         self.assertIn("Error: Could not connect to Ollama", result)
 
+    @patch('src.llm_client.urllib.request.urlopen')
+    def test_stream_response_success(self, mock_urlopen):
+        # Setup mock stream
+        mock_response = MagicMock()
+        mock_response.__iter__.return_value = [
+            b'{"response": "Hello"}',
+            b'{"response": " world"}'
+        ]
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+        
+        # Execute
+        chunks = list(stream_response("Hi"))
+        
+        # Assert
+        self.assertEqual("".join(chunks), "Hello world")
+
 if __name__ == "__main__":
     unittest.main()
+

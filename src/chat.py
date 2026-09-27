@@ -1,4 +1,4 @@
-from src.llm_client import generate_response
+from src.llm_client import stream_response
 from src.config import Config
 
 def start_chat():
@@ -17,8 +17,10 @@ def start_chat():
             if not user_input.strip():
                 continue
                 
-            response = generate_response(user_input)
-            print(f"JARVIS: {response}\n")
+            print("JARVIS: ", end="", flush=True)
+            for chunk in stream_response(user_input):
+                print(chunk, end="", flush=True)
+            print("\n")
             
         except KeyboardInterrupt:
             print("\nJARVIS: Goodbye!")

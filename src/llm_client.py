@@ -1,17 +1,17 @@
 import json
 import urllib.request
 import urllib.error
-from typing import Generator
+from typing import Generator, List, Dict
 from src.config import Config
 
-def stream_response(prompt: str) -> Generator[str, None, None]:
+def stream_response(messages: List[Dict[str, str]]) -> Generator[str, None, None]:
     """
-    Sends a prompt to the local Ollama API and yields chunks of the response as they are generated.
+    Sends a conversation history to the local Ollama API and yields chunks of the response as they are generated.
     """
-    url = f"{Config.OLLAMA_URL}/api/generate"
+    url = f"{Config.OLLAMA_URL}/api/chat"
     payload = {
         "model": Config.MODEL_NAME,
-        "prompt": prompt,
+        "messages": messages,
         "stream": True
     }
     
@@ -23,7 +23,7 @@ def stream_response(prompt: str) -> Generator[str, None, None]:
             for line in response:
                 if line:
                     chunk = json.loads(line.decode("utf-8"))
-                    yield chunk.get("response", "")
+                    yield chunk.get("message", {}).get("content", "")
     except urllib.error.URLError as e:
         if isinstance(e.reason, ConnectionRefusedError) or "Connection refused" in str(e.reason):
             yield f"Error: Could not connect to Ollama at {Config.OLLAMA_URL}. Is it running?"
@@ -36,14 +36,14 @@ def stream_response(prompt: str) -> Generator[str, None, None]:
     except Exception as e:
         yield f"Error: {e}"
 
-def generate_response(prompt: str) -> str:
+def generate_response(messages: List[Dict[str, str]]) -> str:
     """
-    Sends a prompt to the local Ollama API and returns the generated text.
+    Sends a conversation history to the local Ollama API and returns the generated text.
     """
-    url = f"{Config.OLLAMA_URL}/api/generate"
+    url = f"{Config.OLLAMA_URL}/api/chat"
     payload = {
         "model": Config.MODEL_NAME,
-        "prompt": prompt,
+        "messages": messages,
         "stream": False
     }
     
@@ -53,7 +53,7 @@ def generate_response(prompt: str) -> str:
     try:
         with urllib.request.urlopen(req, timeout=Config.REQUEST_TIMEOUT) as response:
             result = json.loads(response.read().decode("utf-8"))
-            return result.get("response", "")
+            return result.get("message", {}).get("content", "")
     except urllib.error.URLError as e:
         if isinstance(e.reason, ConnectionRefusedError) or "Connection refused" in str(e.reason):
             return f"Error: Could not connect to Ollama at {Config.OLLAMA_URL}. Is it running?"

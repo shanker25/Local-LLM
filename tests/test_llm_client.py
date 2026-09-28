@@ -11,15 +11,18 @@ from src.llm_client import generate_response, stream_response
 
 class TestLLMClient(unittest.TestCase):
 
+    def setUp(self):
+        self.messages = [{"role": "user", "content": "Who are you?"}]
+
     @patch('src.llm_client.urllib.request.urlopen')
     def test_generate_response_success(self, mock_urlopen):
         # Setup mock
         mock_response = MagicMock()
-        mock_response.read.return_value = b'{"response": "Hello, I am JARVIS."}'
+        mock_response.read.return_value = b'{"message": {"content": "Hello, I am JARVIS."}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
         
         # Execute
-        result = generate_response("Who are you?")
+        result = generate_response(self.messages)
         
         # Assert
         self.assertEqual(result, "Hello, I am JARVIS.")
@@ -31,7 +34,7 @@ class TestLLMClient(unittest.TestCase):
         mock_urlopen.side_effect = urllib.error.URLError(ConnectionRefusedError("Connection refused"))
         
         # Execute
-        result = generate_response("Hello")
+        result = generate_response(self.messages)
         
         # Assert
         self.assertIn("Error: Could not connect to Ollama", result)
@@ -41,13 +44,13 @@ class TestLLMClient(unittest.TestCase):
         # Setup mock stream
         mock_response = MagicMock()
         mock_response.__iter__.return_value = [
-            b'{"response": "Hello"}',
-            b'{"response": " world"}'
+            b'{"message": {"content": "Hello"}}',
+            b'{"message": {"content": " world"}}'
         ]
         mock_urlopen.return_value.__enter__.return_value = mock_response
         
         # Execute
-        chunks = list(stream_response("Hi"))
+        chunks = list(stream_response(self.messages))
         
         # Assert
         self.assertEqual("".join(chunks), "Hello world")

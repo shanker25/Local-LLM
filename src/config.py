@@ -23,6 +23,6 @@ load_dotenv()
 class Config:
     """Application configuration."""
     OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-    MODEL_NAME = os.getenv("MODEL_NAME", "llama3.2:3b")
+    MODEL_NAME = os.getenv("MODEL_NAME", "llama3.2:1b")
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "120"))
 
